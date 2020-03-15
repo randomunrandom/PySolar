@@ -3,7 +3,7 @@ from typing import Tuple, NamedTuple, List, Any
 from numpy import sqrt, pi
 import pygame
 
-from .constants import GRAVITY, MAX_SPEED
+from .constants import GRAVITY, MAX_SPEED, YELLOW
 
 @dataclass()
 class vector_2d:
@@ -42,34 +42,41 @@ class Particle:
 
         self.absorbed: bool = False
 
-    @property
-    def radius(self):
-        return sqrt(self.mass / pi)
+    def radius(self, scale: float = 1):
+        return sqrt(self.mass * scale / pi)
 
-    @property
-    def int_radius(self):
-        return int(round(sqrt(self.mass / pi)))
+    def int_radius(self, scale: float = 1):
+        return int(round(sqrt(self.mass * scale / pi)))
 
-    def position(self, resolution):
-        x = int(round(self.coordinates.x + (resolution[0]/2)))
-        y = int(round(self.coordinates.y + (resolution[1]/2)))
+    def position(self, resolution: Tuple[int, int], scale: float = 1):
+        x = int(round((self.coordinates.x + (resolution[0]/2)) * scale))
+        y = int(round((self.coordinates.y + (resolution[1]/2)) * scale))
         return x, y
 
-    def display(self, screen: pygame.display, bd_type: bool):
+    def display(self, screen: pygame.display, scale: float, bd_type: bool):
         w, h = screen.get_size()
         x, y = self.position((w, h))
-        pygame.draw.circle(screen, self.color, (x, y), self.int_radius)
         if bd_type:
-            r = self.radius
-            if (x+r) >= (w - 10) or (x-r) <= 10:
+            r = self.radius()
+            if (x+r) >= (w - 10):
                 self.velocity.x *= -1
-            if (y+r) >= (h - 10) or (y-r) <= 10:
+                self.coordinates.x = w-10
+            elif (x-r) <= 10:
+                self.velocity.x *= -1
+                self.coordinates.x = 10
+
+            if (y+r) >= (h - 10):
                 self.velocity.y *= -1
+                self.coordinates.y = h-10
+            elif (y-r) <= 10:
+                self.velocity.y *= -1
+                self.coordinates.y = 10
         else:
             if x > w or x < 0:
                 self.absorbed = True
             if y > h or y < 0:
                 self.absorbed = True
+        pygame.draw.circle(screen, self.color, self.position((w, h), scale), self.int_radius(scale))
 
     def interaction(self, particles: List[Any]):
         ax: float = 0.0
@@ -81,19 +88,31 @@ class Particle:
             dy: float = p.coordinates.y - self.coordinates.y
             dsq: float = (dx**2) + (dy**2)
             dr: float = sqrt(dsq)
-            if (dr < self.radius) or (dr < p.radius):
+            if (dr < self.radius()) and (p.color != YELLOW):
                 self.mass += p.mass
-                p.absorbed = True
                 self.velocity.x += p.velocity.x
                 self.velocity.y += p.velocity.y
+                p.absorbed = True
             else:
                 force: float = 0.0 if dr < 1e-4 else GRAVITY*self.mass*p.mass/dsq
                 ax += force * dx / dr
                 ay += force * dy / dr
-        self.velocity.x = min(self.velocity.x + ax, MAX_SPEED)
-        self.velocity.y = min(self.velocity.y + ay, MAX_SPEED)
+        if self.color == YELLOW:
+            return
+        self.velocity.x = self.velocity.x + ax
+        if self.velocity.x > MAX_SPEED:
+            self.velocity.x = MAX_SPEED
+        elif self.velocity.x < -MAX_SPEED:
+            self.velocity.x = -MAX_SPEED
+        self.velocity.y = self.velocity.y + ay
+        if self.velocity.y > MAX_SPEED:
+            self.velocity.y = MAX_SPEED
+        elif self.velocity.y < -MAX_SPEED:
+            self.velocity.y = -MAX_SPEED
         self.coordinates.x += self.velocity.x
         self.coordinates.y += self.velocity.y
+        # if (abs(self.coordinates.x) < 10) and (abs(self.coordinates.y) < 10):
+        #     self.absorbed = True
 
     def __repr__(self):
         return f"Particle(color={self.color}, mass={self.mass}, coordinates={self.coordinates})"

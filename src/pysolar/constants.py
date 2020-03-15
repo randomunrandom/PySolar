@@ -2,9 +2,9 @@
 configuration
 """
 CAPTION = ""
-N = 250
-GRAVITY = 1
-MAX_SPEED = 10
+N = 100
+GRAVITY = 0.1
+MAX_SPEED = 100000000000000000000
 
 """
 colors
