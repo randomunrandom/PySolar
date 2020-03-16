@@ -1,9 +1,10 @@
 from dataclasses import dataclass, astuple
 from typing import Tuple, NamedTuple, List, Any
-from numpy import sqrt, pi
+from numpy import sqrt, pi, hypot
 import pygame
 
-from .constants import GRAVITY, MAX_SPEED, YELLOW
+from .constants import YELLOW, T
+
 
 @dataclass()
 class vector_2d:
@@ -12,35 +13,93 @@ class vector_2d:
 
 
 class Particle:
+    cls_id: int = 1
+
     def __init__(
             self,
             color: Tuple[int, int, int],
             mass: float,
-            coordinates: vector_2d = None,
-            x: float = None,
-            y: float = None,
-            velocity: vector_2d = None,
-            v_x: float = None,
-            v_y: float = None,
+            x: float,
+            y: float,
+            v_x: float,
+            v_y: float,
     ):
-        if (coordinates is None) and (x is not None) and (y is not None):
-            self.coordinates: vector_2d = vector_2d(x, y)
-        elif (x is None) and (y is None) and (coordinates is not None):
-            self.coordinates: vector_2d = coordinates
-        else:
-            raise ValueError("Either `coordinates` or `x and y` should be present")
-
-        if (velocity is None) and (v_x is not None) and (v_y is not None):
-            self.velocity: vector_2d = vector_2d(v_x, v_y)
-        elif (v_x is None) and (v_y is None) and (velocity is not None):
-            self.velocity: vector_2d = velocity
-        else:
-            raise ValueError("Either `velocity` or `v_x and v_y` should be present")
-
+        self.coordinates: vector_2d = vector_2d(x, y)
+        self.velocity: vector_2d = vector_2d(v_x, v_y)
         self.color: Tuple[int, int, int] = color
         self.mass: float = mass
 
+        self.acceleration: vector_2d = vector_2d(0.0, 0.0)
         self.absorbed: bool = False
+        self.interactable: List[Tuple[float, float, float]] = []
+        self.id = Particle.cls_id
+        Particle.cls_id += 1
+
+    def __repr__(self) -> str:
+        return f"Particle(color={self.color}, mass={self.mass}, coordinates={self.coordinates})"
+
+    def __str__(self) -> str:
+        return f"Particle of color {self.color} at {self.coordinates} with mass {self.mass}"
+
+    def add_interactable(self, other: Any):
+        # add object with which particle can interact
+        self.interactable.append((other.mass, other.coordinates.x, other.coordinates.y))
+
+    def update(self):
+        self.calc_x()
+        self.calc_y()
+        del self.interactable[:]
+
+    def fx(self, this_x: float):
+        res = 0
+        for (mass, x, y) in self.interactable:
+            r = hypot(x - this_x, y - self.coordinates.y)
+            res += mass * (x - this_x) / (r ** 3)
+        return res
+
+    def fy(self, this_y: float):
+        res = 0
+        for (mass, x, y) in self.interactable:
+            r = hypot(x - self.coordinates.x, y - this_y)
+            res += mass * (y - this_y) / r ** 3
+        return res
+
+    def calc_x(self):
+        k_1 = T * self.fx(self.coordinates.x)
+        q_1 = T * self.velocity.x
+
+        k_2 = T * self.fx(self.coordinates.x + q_1 / 2)
+        q_2 = T * (self.velocity.x + k_1 / 2)
+
+        k_3 = T * self.fx(self.coordinates.x + q_2 / 2)
+        q_3 = T * (self.velocity.x + k_2 / 2)
+
+        k_4 = T * self.fx(self.coordinates.x + q_3)
+        q_4 = T * (self.velocity.x + k_3)
+
+        self.velocity.x += (k_1 + 2 * k_2 + 2 * k_3 + k_4) / 6
+        self.coordinates.x += (q_1 + 2 * q_2 + 2 * q_3 + q_4) / 6
+
+    def calc_y(self):
+        k_1: float = T * self.fy(self.coordinates.y)
+        q_1: float = T * self.velocity.y
+
+        k_2: float = T * self.fy(self.coordinates.y + q_1 / 2)
+        q_2: float = T * (self.velocity.y + k_1 / 2)
+
+        k_3: float = T * self.fy(self.coordinates.y + q_2 / 2)
+        q_3: float = T * (self.velocity.y + k_2 / 2)
+
+        k_4: float = T * self.fy(self.coordinates.y + q_3)
+        q_4: float = T * (self.velocity.y + k_3)
+
+        self.velocity.y += (k_1 + 2 * k_2 + 2 * k_3 + k_4) / 6
+        self.coordinates.y += (q_1 + 2 * q_2 + 2 * q_3 + q_4) / 6
+
+    def position(self, scale: float = 1, x_offset: int = 0, y_offset: int = 0):
+        x = int(round(self.coordinates.x * scale)) + x_offset
+        y = int(round(self.coordinates.y * scale)) + y_offset
+        return x, y
 
     def radius(self, scale: float = 1):
         return sqrt(self.mass * scale / pi)
@@ -48,74 +107,7 @@ class Particle:
     def int_radius(self, scale: float = 1):
         return int(round(sqrt(self.mass * scale / pi)))
 
-    def position(self, resolution: Tuple[int, int], scale: float = 1):
-        x = int(round((self.coordinates.x + (resolution[0]/2)) * scale))
-        y = int(round((self.coordinates.y + (resolution[1]/2)) * scale))
-        return x, y
+    def display(self, screen: pygame.display, scale: float = 1, x_offset: int = 0, y_offset: int = 0):
+        x, y = self.position()
+        pygame.draw.circle(screen, self.color, self.position(scale, x_offset, y_offset), self.int_radius(scale))
 
-    def display(self, screen: pygame.display, scale: float, bd_type: bool):
-        w, h = screen.get_size()
-        x, y = self.position((w, h))
-        if bd_type:
-            r = self.radius()
-            if (x+r) >= (w - 10):
-                self.velocity.x *= -1
-                self.coordinates.x = w-10
-            elif (x-r) <= 10:
-                self.velocity.x *= -1
-                self.coordinates.x = 10
-
-            if (y+r) >= (h - 10):
-                self.velocity.y *= -1
-                self.coordinates.y = h-10
-            elif (y-r) <= 10:
-                self.velocity.y *= -1
-                self.coordinates.y = 10
-        else:
-            if x > w or x < 0:
-                self.absorbed = True
-            if y > h or y < 0:
-                self.absorbed = True
-        pygame.draw.circle(screen, self.color, self.position((w, h), scale), self.int_radius(scale))
-
-    def interaction(self, particles: List[Any]):
-        ax: float = 0.0
-        ay: float = 0.0
-        for p in particles:
-            if (p is self) or p.absorbed:
-                continue
-            dx: float = p.coordinates.x - self.coordinates.x
-            dy: float = p.coordinates.y - self.coordinates.y
-            dsq: float = (dx**2) + (dy**2)
-            dr: float = sqrt(dsq)
-            if (dr < self.radius()) and (p.color != YELLOW):
-                self.mass += p.mass
-                self.velocity.x += p.velocity.x
-                self.velocity.y += p.velocity.y
-                p.absorbed = True
-            else:
-                force: float = 0.0 if dr < 1e-4 else GRAVITY*self.mass*p.mass/dsq
-                ax += force * dx / dr
-                ay += force * dy / dr
-        if self.color == YELLOW:
-            return
-        self.velocity.x = self.velocity.x + ax
-        if self.velocity.x > MAX_SPEED:
-            self.velocity.x = MAX_SPEED
-        elif self.velocity.x < -MAX_SPEED:
-            self.velocity.x = -MAX_SPEED
-        self.velocity.y = self.velocity.y + ay
-        if self.velocity.y > MAX_SPEED:
-            self.velocity.y = MAX_SPEED
-        elif self.velocity.y < -MAX_SPEED:
-            self.velocity.y = -MAX_SPEED
-        self.coordinates.x += self.velocity.x
-        self.coordinates.y += self.velocity.y
-        # if (abs(self.coordinates.x) < 10) and (abs(self.coordinates.y) < 10):
-        #     self.absorbed = True
-
-    def __repr__(self):
-        return f"Particle(color={self.color}, mass={self.mass}, coordinates={self.coordinates})"
-
-    def __str__(self):
-        return f"Particle of color {self.color} at {self.coordinates} with mass {self.mass}"

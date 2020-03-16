@@ -9,12 +9,11 @@ from .particle import Particle
 
 class System:
     def __init__(
-        self, resolution: Tuple[int, int], caption: str, n: int, *, boundaries: bool = False, seed: int = 42
+        self, resolution: Tuple[int, int], caption: str, n: int, * , seed: int = 42
     ):
         self.resolution = resolution
         self.caption = caption
         self.n = n
-        self.boundaries = boundaries
 
         random.seed(seed)
 
@@ -58,6 +57,8 @@ class System:
         pygame.display.set_caption(self.caption)
 
         scale: float = 1
+        x_offset: int = self.resolution[0] // 2
+        y_offset: int = self.resolution[1] // 2
 
         done = False
         while not done:
@@ -76,17 +77,25 @@ class System:
                         scale += 0.1
                     elif (event.key == pygame.K_MINUS) or (event.key == pygame.K_UNDERSCORE):
                         scale -= 0.1
+                    elif (event.key == pygame.K_w) or (event.key == pygame.K_UP):
+                        y_offset -= 1
+                    elif (event.key == pygame.K_s) or (event.key == pygame.K_DOWN):
+                        y_offset += 1
+                    elif (event.key == pygame.K_a) or (event.key == pygame.K_LEFT):
+                        x_offset -= 1
+                    elif (event.key == pygame.K_d) or (event.key == pygame.K_RIGHT):
+                        x_offset += 1
 
             screen.fill(WHITE)
             # print(scale)
-            self.sun.display(screen, scale, bd_type=self.boundaries)
+            self.sun.display(screen, scale, x_offset, y_offset)
 
             for p in self.particles:
                 if p.absorbed:
                     continue
-                p.display(screen, scale=scale, bd_type=self.boundaries)
-                p.interaction([*self.particles, self.sun])
-            self.sun.interaction(self.particles)
+                p.display(screen, scale, x_offset, y_offset)
+                # p.interaction([*self.particles, self.sun])
+            # self.sun.interaction(self.particles)
             pygame.display.update()
 
             # print(len([p for p in self.particles if not p.absorbed]))

@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     info = pygame.display.Info()
 
-    sys = System((int(round(info.current_w * 0.9)), int(round(info.current_h * 0.9))), CAPTION, N, boundaries=True)
+    sys = System((1300, 500), CAPTION, N)
     sys()
 
     pygame.quit()

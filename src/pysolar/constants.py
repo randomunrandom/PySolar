@@ -1,10 +1,9 @@
 """
 configuration
 """
-CAPTION = ""
+CAPTION = "Kireev Danil"
 N = 100
-GRAVITY = 0.1
-MAX_SPEED = 100000000000000000000
+T = 0.1
 
 """
 colors
