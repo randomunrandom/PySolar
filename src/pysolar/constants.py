@@ -22,7 +22,7 @@ from .particle import Particle
 
 presets = {
     "solar": [
-        Particle(color=YELLOW, mass=4000, x=0, y=0, v_x=0, v_y=0,),
-        Particle(color=BLUE, mass=10, x=100, y=0, v_x=0, v_y=4.5),
+        Particle(color=YELLOW, mass=4000, radius=15, x=0, y=0, v_x=0, v_y=0),
+        Particle(color=BLUE, mass=10, radius=3, x=100, y=0, v_x=0, v_y=4.5),
     ]
 }

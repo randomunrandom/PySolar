@@ -45,8 +45,9 @@ class System:
             # v_y =      x * self.omega_0 * (power(r_0 / r, 3 / 2))
             v_x = random.randint(-2000, 2000) / 1000
             v_y = random.randint(-2000, 2000) / 1000
+            v_y = random.randint(0, 20_000) / 1_000
             particles.append(
-                Particle(color=BLUE, mass=mass, x=x, y=y, v_x=v_x, v_y=v_y)
+                Particle(color=BLUE, mass=mass, radius=r, x=x, y=y, v_x=v_x, v_y=v_y)
             )
         return particles
 
@@ -67,9 +68,9 @@ class System:
         while not done:
             keys = pygame.key.get_pressed()
             if keys[pygame.K_PLUS] or keys[pygame.K_EQUALS]:
-                scale += 0.1
+                scale = round(scale + 0.1, 1)
             if keys[pygame.K_MINUS] or keys[pygame.K_UNDERSCORE]:
-                scale -= 0.1
+                scale = round(scale - 0.1, 1)
             if keys[pygame.K_w] or keys[pygame.K_UP]:
                 y_offset += 1
             if keys[pygame.K_s] or keys[pygame.K_DOWN]:
@@ -98,7 +99,7 @@ class System:
                         continue
 
                     dr = p_i.dr(p_j)
-                    if dr < p_i.radius():
+                    if dr < p_i.radius:
                         p_i.absorb(p_j)
                         self.particles.remove(p_j)
                     else:

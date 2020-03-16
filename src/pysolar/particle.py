@@ -19,6 +19,7 @@ class Particle:
         self,
         color: Tuple[int, int, int],
         mass: float,
+        radius: float,
         x: float,
         y: float,
         v_x: float,
@@ -28,6 +29,7 @@ class Particle:
         self.velocity: vector_2d = vector_2d(v_x, v_y)
         self.color: Tuple[int, int, int] = color
         self.mass: float = mass
+        self.radius: float = radius
 
         self.acceleration: vector_2d = vector_2d(0.0, 0.0)
         self.interactable: List[Tuple[float, float, float]] = []
@@ -106,12 +108,6 @@ class Particle:
             (self.coordinates.y - p.coordinates.y),
         )
 
-    def radius(self, scale: float = 1) -> float:
-        return sqrt(self.mass * scale / pi)
-
-    def int_radius(self, scale: float = 1) -> int:
-        return int(round(sqrt(self.mass * scale / pi)))
-
     def display(
         self,
         screen: pygame.display,
@@ -126,7 +122,7 @@ class Particle:
             screen,
             self.color,
             self.position(scale, x_offset, y_offset),
-            self.int_radius(scale),
+            int(round(self.radius * scale)),
         )
 
     def absorb(self, p: "Particle") -> NoReturn:
