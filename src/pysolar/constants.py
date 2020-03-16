@@ -3,7 +3,7 @@ configuration
 """
 CAPTION = "Kireev Danil"
 N = 100
-T = 0.1
+T = 1
 
 """
 colors
@@ -14,3 +14,15 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
+
+"""
+presets
+"""
+from .particle import Particle
+
+presets = {
+    "solar": [
+        Particle(color=YELLOW, mass=4000, x=0, y=0, v_x=0, v_y=0,),
+        Particle(color=BLUE, mass=10, x=100, y=0, v_x=0, v_y=4.5),
+    ]
+}

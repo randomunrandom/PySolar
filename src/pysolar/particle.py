@@ -1,9 +1,9 @@
 from dataclasses import dataclass, astuple
-from typing import Tuple, NamedTuple, List, Any
+from typing import Tuple, List, NoReturn
 from numpy import sqrt, pi, hypot
 import pygame
 
-from .constants import YELLOW, T
+from .constants import *
 
 
 @dataclass()
@@ -16,13 +16,13 @@ class Particle:
     cls_id: int = 1
 
     def __init__(
-            self,
-            color: Tuple[int, int, int],
-            mass: float,
-            x: float,
-            y: float,
-            v_x: float,
-            v_y: float,
+        self,
+        color: Tuple[int, int, int],
+        mass: float,
+        x: float,
+        y: float,
+        v_x: float,
+        v_y: float,
     ):
         self.coordinates: vector_2d = vector_2d(x, y)
         self.velocity: vector_2d = vector_2d(v_x, v_y)
@@ -30,7 +30,6 @@ class Particle:
         self.mass: float = mass
 
         self.acceleration: vector_2d = vector_2d(0.0, 0.0)
-        self.absorbed: bool = False
         self.interactable: List[Tuple[float, float, float]] = []
         self.id = Particle.cls_id
         Particle.cls_id += 1
@@ -41,41 +40,41 @@ class Particle:
     def __str__(self) -> str:
         return f"Particle of color {self.color} at {self.coordinates} with mass {self.mass}"
 
-    def add_interactable(self, other: Any):
+    def add_interactable(self, p: "Particle") -> NoReturn:
         # add object with which particle can interact
-        self.interactable.append((other.mass, other.coordinates.x, other.coordinates.y))
+        self.interactable.append((p.mass, p.coordinates.x, p.coordinates.y))
 
-    def update(self):
+    def update(self) -> NoReturn:
         self.calc_x()
         self.calc_y()
         del self.interactable[:]
 
-    def fx(self, this_x: float):
-        res = 0
+    def fx(self, this_x: float) -> float:
+        res = 0.0
         for (mass, x, y) in self.interactable:
             r = hypot(x - this_x, y - self.coordinates.y)
             res += mass * (x - this_x) / (r ** 3)
         return res
 
-    def fy(self, this_y: float):
-        res = 0
+    def fy(self, this_y: float) -> float:
+        res = 0.0
         for (mass, x, y) in self.interactable:
             r = hypot(x - self.coordinates.x, y - this_y)
             res += mass * (y - this_y) / r ** 3
         return res
 
-    def calc_x(self):
-        k_1 = T * self.fx(self.coordinates.x)
-        q_1 = T * self.velocity.x
+    def calc_x(self) -> NoReturn:
+        k_1: float = T * self.fx(self.coordinates.x)
+        q_1: float = T * self.velocity.x
 
-        k_2 = T * self.fx(self.coordinates.x + q_1 / 2)
-        q_2 = T * (self.velocity.x + k_1 / 2)
+        k_2: float = T * self.fx(self.coordinates.x + q_1 / 2)
+        q_2: float = T * (self.velocity.x + k_1 / 2)
 
-        k_3 = T * self.fx(self.coordinates.x + q_2 / 2)
-        q_3 = T * (self.velocity.x + k_2 / 2)
+        k_3: float = T * self.fx(self.coordinates.x + q_2 / 2)
+        q_3: float = T * (self.velocity.x + k_2 / 2)
 
-        k_4 = T * self.fx(self.coordinates.x + q_3)
-        q_4 = T * (self.velocity.x + k_3)
+        k_4: float = T * self.fx(self.coordinates.x + q_3)
+        q_4: float = T * (self.velocity.x + k_3)
 
         self.velocity.x += (k_1 + 2 * k_2 + 2 * k_3 + k_4) / 6
         self.coordinates.x += (q_1 + 2 * q_2 + 2 * q_3 + q_4) / 6
@@ -101,13 +100,52 @@ class Particle:
         y = int(round(self.coordinates.y * scale)) + y_offset
         return x, y
 
-    def radius(self, scale: float = 1):
+    def dr(self, p: "Particle") -> float:
+        return hypot(
+            (self.coordinates.x - p.coordinates.x),
+            (self.coordinates.y - p.coordinates.y),
+        )
+
+    def radius(self, scale: float = 1) -> float:
         return sqrt(self.mass * scale / pi)
 
-    def int_radius(self, scale: float = 1):
+    def int_radius(self, scale: float = 1) -> int:
         return int(round(sqrt(self.mass * scale / pi)))
 
-    def display(self, screen: pygame.display, scale: float = 1, x_offset: int = 0, y_offset: int = 0):
+    def display(
+        self,
+        screen: pygame.display,
+        scale: float = 1,
+        x_offset: int = 0,
+        y_offset: int = 0,
+    ) -> NoReturn:
+        x: int
+        y: int
         x, y = self.position()
-        pygame.draw.circle(screen, self.color, self.position(scale, x_offset, y_offset), self.int_radius(scale))
+        pygame.draw.circle(
+            screen,
+            self.color,
+            self.position(scale, x_offset, y_offset),
+            self.int_radius(scale),
+        )
 
+    def absorb(self, p: "Particle") -> NoReturn:
+        new_mass = self.mass + p.mass
+        self.coordinates.x = (
+            self.coordinates.x * self.mass + p.coordinates.x * p.mass
+        ) / new_mass
+        self.coordinates.y = (
+            self.coordinates.y * self.mass + p.coordinates.y * p.mass
+        ) / new_mass
+
+        self.velocity.x = (
+            self.velocity.x * self.mass + p.velocity.x * p.mass
+        ) / new_mass
+        self.velocity.y = (
+            self.velocity.y * self.mass + p.velocity.y * p.mass
+        ) / new_mass
+
+        if p.mass > self.mass:
+            self.color = p.color
+
+        self.mass = new_mass
