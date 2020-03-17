@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "PySolar"
+name = "Py_Solar"
 version = "0.1.0"
 description = ""
 authors = ["Danil <danilunrandom@gmail.com>"]
