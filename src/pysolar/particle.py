@@ -65,13 +65,15 @@ class Particle:
 
     def calc_x(self) -> NoReturn:
         k_1: float = self.fx(self.coordinates.x)
-        k_2: float = self.fx(self.coordinates.x + q_1 / 2)
-        k_3: float = self.fx(self.coordinates.x + q_2 / 2)
-        k_4: float = self.fx(self.coordinates.x + q_3)
-
         q_1: float = self.velocity.x
+
+        k_2: float = self.fx(self.coordinates.x + q_1 / 2)
         q_2: float = (self.velocity.x + k_1 / 2)
+        
+        k_3: float = self.fx(self.coordinates.x + q_2 / 2)
         q_3: float = (self.velocity.x + k_2 / 2)
+        
+        k_4: float = self.fx(self.coordinates.x + q_3)
         q_4: float = (self.velocity.x + k_3)
 
         self.velocity.x += T * (k_1 + 2 * k_2 + 2 * k_3 + k_4) / 6
@@ -79,13 +81,15 @@ class Particle:
 
     def calc_y(self):
         k_1: float = self.fy(self.coordinates.y)
-        k_2: float = self.fy(self.coordinates.y + q_1 / 2)
-        k_3: float = self.fy(self.coordinates.y + q_2 / 2)
-        k_4: float = self.fy(self.coordinates.y + q_3)
-
         q_1: float = self.velocity.y
+
         q_2: float = (self.velocity.y + k_1 / 2)
+        k_2: float = self.fy(self.coordinates.y + q_1 / 2)
+        
+        k_3: float = self.fy(self.coordinates.y + q_2 / 2)
         q_3: float = (self.velocity.y + k_2 / 2)
+        
+        k_4: float = self.fy(self.coordinates.y + q_3)
         q_4: float = (self.velocity.y + k_3)
 
         self.velocity.y += T * (k_1 + 2 * k_2 + 2 * k_3 + k_4) / 6
