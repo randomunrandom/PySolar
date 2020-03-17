@@ -27,7 +27,7 @@ class System:
 
         self.omega_0 = 0.2
 
-        self.font = pygame.font.SysFont("Hack Nerd Font Mono", 12)
+        self.font = pygame.font.SysFont(pygame.font.get_default_font(), 24)
         self.screen = pygame.display.set_mode((0, 0), flags=pygame.RESIZABLE)
         self.resolution = self.screen.get_size()
 
@@ -77,7 +77,6 @@ class System:
 
         done = False
         while not done:
-            iterations += 1
             keys = pygame.key.get_pressed()
             if keys[pygame.K_PLUS] or keys[pygame.K_EQUALS]:
                 scale = round(scale + 0.01, 2)
@@ -103,8 +102,14 @@ class System:
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         done = True
-
+            
             self.screen.fill(BLACK)
+            if len(self.particles) == 0:
+                pygame.display.update()
+                continue
+            iterations += 1
+
+            
 
             for p_i in self.particles:
                 for p_j in self.particles:
