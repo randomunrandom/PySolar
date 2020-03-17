@@ -1,10 +1,12 @@
 from typing import Tuple, List, Union
-import pygame
+import time
 
+import pygame
 from numpy import sqrt, random, pi, cos, sin
 
 from .constants import *
 from .particle import Particle
+from .presets import presets
 
 
 class System:
@@ -16,10 +18,12 @@ class System:
         *,
         seed: int = 42,
         preset: str = "random",
+        folow: bool = False
     ):
         self.resolution = resolution
         self.caption = caption
         self.n = n
+        self.folow = folow
 
         random.seed(seed)
 
@@ -27,10 +31,12 @@ class System:
 
         self.myfont = pygame.font.SysFont("Hack Nerd Font Mono", 12)
 
-        if preset == "random":
-            self.particles = self.create_particles(self.n)
+        if preset in [key for key in presets.keys()]:
+            self.particles = presets[preset]
+            self.folowing = lambda: max(self.particles, key=lambda el: el.radius)
         else:
-            self.particles = presets["solar"]
+            self.particles = self.create_particles(self.n)
+            self.folowing = lambda: self.particles[0]
 
     def create_particles(self, n: int) -> List[Particle]:
         r_0 = min(*self.resolution) // 2
@@ -45,9 +51,9 @@ class System:
             # v_y =      x * self.omega_0 * (power(r_0 / r, 3 / 2))
             v_x = random.randint(-2000, 2000) / 1000
             v_y = random.randint(-2000, 2000) / 1000
-            v_y = random.randint(0, 20_000) / 1_000
+            rad = random.randint(0, 10_000) / 1_000
             particles.append(
-                Particle(color=BLUE, mass=mass, radius=r, x=x, y=y, v_x=v_x, v_y=v_y)
+                Particle(color=BLUE, mass=mass, radius=rad, x=x, y=y, v_x=v_x, v_y=v_y)
             )
         return particles
 
@@ -64,13 +70,17 @@ class System:
         x_offset: int = self.resolution[0] // 2
         y_offset: int = self.resolution[1] // 2
 
+        iterations: int = 0
+        start = time.time()
+
         done = False
         while not done:
+            iterations += 1
             keys = pygame.key.get_pressed()
             if keys[pygame.K_PLUS] or keys[pygame.K_EQUALS]:
-                scale = round(scale + 0.1, 1)
+                scale = round(scale + 0.01, 2)
             if keys[pygame.K_MINUS] or keys[pygame.K_UNDERSCORE]:
-                scale = round(scale - 0.1, 1)
+                scale = round(scale - 0.01, 2)
             if keys[pygame.K_w] or keys[pygame.K_UP]:
                 y_offset += 1
             if keys[pygame.K_s] or keys[pygame.K_DOWN]:
@@ -88,14 +98,15 @@ class System:
                             self.particles.append(p)
                     elif event.button == 3:
                         self.particles = []
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        done = True
 
             screen.fill(WHITE)
 
             for p_i in self.particles:
                 for p_j in self.particles:
                     if p_i is p_j:
-                        if p_i.id != p_j.id:
-                            raise ValueError
                         continue
 
                     dr = p_i.dr(p_j)
@@ -107,11 +118,18 @@ class System:
 
             for p in self.particles:
                 p.update()
+
+            if self.folow:
+                follow = self.folowing()
+                x_offset = (self.resolution[0] // 2) - int(round(follow.coordinates.x))
+                y_offset = (self.resolution[1] // 2) - int(round(follow.coordinates.x))
+
             for p in self.particles:
                 p.display(screen, scale, x_offset, y_offset)
 
             textsurface = self.myfont.render(
-                f"scale: {scale} | x offset: {x_offset} | y offset: {y_offset} | n: {len(self.particles)}",
+                f"scale: {scale} | x offset: {x_offset} | y offset: {y_offset} | n: {len(self.particles)} | iterations "
+                f"{iterations} | time {time.time()-start}",
                 True,
                 (0, 0, 0),
             )

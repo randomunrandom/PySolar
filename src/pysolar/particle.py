@@ -33,8 +33,6 @@ class Particle:
 
         self.acceleration: vector_2d = vector_2d(0.0, 0.0)
         self.interactable: List[Tuple[float, float, float]] = []
-        self.id = Particle.cls_id
-        Particle.cls_id += 1
 
     def __repr__(self) -> str:
         return f"Particle(color={self.color}, mass={self.mass}, coordinates={self.coordinates})"
@@ -145,3 +143,4 @@ class Particle:
             self.color = p.color
 
         self.mass = new_mass
+        self.radius = sqrt((self.radius**2) + (p.radius**2))

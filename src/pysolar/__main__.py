@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     info = pygame.display.Info()
 
-    sys = System((1300, 700), CAPTION, N, preset="solar")
+    sys = System((1300, 700), CAPTION, N, preset="solar", folow=True)
     sys()
 
     pygame.quit()
