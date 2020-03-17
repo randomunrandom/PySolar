@@ -1,8 +1,9 @@
-import sys
 import math
-import pygame
 import random
+import sys
 from collections import defaultdict
+
+import pygame
 
 # The window size
 WIDTH, HEIGHT = 900, 600

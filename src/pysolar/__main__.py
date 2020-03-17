@@ -1,8 +1,11 @@
+#!/usr/bin/env python3.8
+
 from typing import List, Tuple
+
 import pygame
 
-from .system import System
 from .constants import CAPTION, N
+from .system import System
 
 if __name__ == "__main__":
     pygame.init()
@@ -11,7 +14,7 @@ if __name__ == "__main__":
 
     info = pygame.display.Info()
 
-    sys = System((1300, 700), CAPTION, N, preset="solar", folow=True)
+    sys = System(CAPTION, N, preset="asdasd", follow=False)
     sys()
 
     pygame.quit()

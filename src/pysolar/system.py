@@ -1,8 +1,8 @@
-from typing import Tuple, List, Union
 import time
+from typing import List, Tuple, Union
 
 import pygame
-from numpy import sqrt, random, pi, cos, sin
+from numpy import cos, pi, random, sin, sqrt
 
 from .constants import *
 from .particle import Particle
@@ -12,30 +12,33 @@ from .presets import presets
 class System:
     def __init__(
         self,
-        resolution: Tuple[int, int],
         caption: str,
         n: int,
         *,
         seed: int = 42,
         preset: str = "random",
-        folow: bool = False
+        follow: bool = False,
     ):
-        self.resolution = resolution
-        self.caption = caption
-        self.n = n
-        self.folow = folow
+        self.caption: str = caption
+        self.n: int = n
+        self.follow: bool = follow
 
         random.seed(seed)
 
         self.omega_0 = 0.2
 
-        self.myfont = pygame.font.SysFont("Hack Nerd Font Mono", 12)
+        self.font = pygame.font.SysFont("Hack Nerd Font Mono", 12)
+        self.screen = pygame.display.set_mode((0, 0), flags=pygame.RESIZABLE)
+        self.resolution = self.screen.get_size()
 
         if preset in [key for key in presets.keys()]:
             self.particles = presets[preset]
             self.folowing = lambda: max(self.particles, key=lambda el: el.radius)
         else:
             self.particles = self.create_particles(self.n)
+            self.particles.append(
+                Particle(color=YELLOW, mass=10_000, radius=30, x=0, y=0, v_x=0, v_y=0)
+            )
             self.folowing = lambda: self.particles[0]
 
     def create_particles(self, n: int) -> List[Particle]:
@@ -58,7 +61,6 @@ class System:
         return particles
 
     def __call__(self):
-        screen = pygame.display.set_mode(self.resolution)
         clock = pygame.time.Clock()
 
         pygame.display.flip()
@@ -66,7 +68,7 @@ class System:
 
         pygame.display.set_caption(self.caption)
 
-        scale: float = 1
+        scale: float = 0.6
         x_offset: int = self.resolution[0] // 2
         y_offset: int = self.resolution[1] // 2
 
@@ -102,7 +104,7 @@ class System:
                     if event.key == pygame.K_ESCAPE:
                         done = True
 
-            screen.fill(WHITE)
+            self.screen.fill(BLACK)
 
             for p_i in self.particles:
                 for p_j in self.particles:
@@ -119,21 +121,29 @@ class System:
             for p in self.particles:
                 p.update()
 
-            if self.folow:
-                follow = self.folowing()
-                x_offset = (self.resolution[0] // 2) - int(round(follow.coordinates.x))
-                y_offset = (self.resolution[1] // 2) - int(round(follow.coordinates.x))
+            if self.follow:
+                if len(self.particles) != 0:
+                    follow = self.folowing()
+                    x_offset = (self.resolution[0] // 2) + int(
+                        round(follow.coordinates.x)
+                    )
+                    y_offset = (self.resolution[1] // 2) - int(
+                        round(follow.coordinates.y)
+                    )
+                else:
+                    x_offset = self.resolution[0] // 2
+                    y_offset = self.resolution[1] // 2
 
             for p in self.particles:
-                p.display(screen, scale, x_offset, y_offset)
+                p.display(self.screen, scale, x_offset, y_offset)
 
-            textsurface = self.myfont.render(
-                f"scale: {scale} | x offset: {x_offset} | y offset: {y_offset} | n: {len(self.particles)} | iterations "
-                f"{iterations} | time {time.time()-start}",
+            textsurface = self.font.render(
+                f"scale: {scale} | x offset: {x_offset} | y offset: {y_offset} | n: {len(self.particles)} | iterations:"
+                f" {iterations} | time: {time.time()-start}",
                 True,
-                (0, 0, 0),
+                WHITE,
             )
-            screen.blit(textsurface, (0, 0))
+            self.screen.blit(textsurface, (0, 0))
             pygame.display.update()
 
             # print(len([p for p in self.particles if not p.absorbed]))

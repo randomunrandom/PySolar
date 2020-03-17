@@ -2,8 +2,9 @@
 configuration
 """
 CAPTION = "Kireev Danil"
-N = 100
-T = 0.1
+N = 10
+T = 1
+G = 1
 
 """
 colors

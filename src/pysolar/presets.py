@@ -1,5 +1,5 @@
-from .particle import Particle
 from .constants import *
+from .particle import Particle
 
 presets = {
     "simple": [
@@ -22,5 +22,5 @@ presets = {
         Particle(color=LIGHT_BLUE, mass=250, radius=6, x=300, y=0, v_x=0, v_y=8),
         Particle(color=GREY, mass=2, radius=3, x=315, y=0, v_x=0, v_y=12),
         Particle(color=RED, mass=250, radius=5, x=450, y=0, v_x=0, v_y=7),
-    ]
+    ],
 }

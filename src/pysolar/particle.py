@@ -1,7 +1,8 @@
-from dataclasses import dataclass, astuple
-from typing import Tuple, List, NoReturn
-from numpy import sqrt, pi, hypot
+from dataclasses import astuple, dataclass
+from typing import List, NoReturn, Tuple
+
 import pygame
+from numpy import hypot, pi, sqrt
 
 from .constants import *
 
@@ -41,7 +42,6 @@ class Particle:
         return f"Particle of color {self.color} at {self.coordinates} with mass {self.mass}"
 
     def add_interactable(self, p: "Particle") -> NoReturn:
-        # add object with which particle can interact
         self.interactable.append((p.mass, p.coordinates.x, p.coordinates.y))
 
     def update(self) -> NoReturn:
@@ -53,47 +53,43 @@ class Particle:
         res = 0.0
         for (mass, x, y) in self.interactable:
             r = hypot(x - this_x, y - self.coordinates.y)
-            res += mass * (x - this_x) / (r ** 3)
+            res += G * mass * (x - this_x) / (r ** 3)
         return res
 
     def fy(self, this_y: float) -> float:
         res = 0.0
         for (mass, x, y) in self.interactable:
             r = hypot(x - self.coordinates.x, y - this_y)
-            res += mass * (y - this_y) / r ** 3
+            res += G * mass * (y - this_y) / r ** 3
         return res
 
     def calc_x(self) -> NoReturn:
-        k_1: float = T * self.fx(self.coordinates.x)
-        q_1: float = T * self.velocity.x
+        k_1: float = self.fx(self.coordinates.x)
+        k_2: float = self.fx(self.coordinates.x + q_1 / 2)
+        k_3: float = self.fx(self.coordinates.x + q_2 / 2)
+        k_4: float = self.fx(self.coordinates.x + q_3)
 
-        k_2: float = T * self.fx(self.coordinates.x + q_1 / 2)
-        q_2: float = T * (self.velocity.x + k_1 / 2)
+        q_1: float = self.velocity.x
+        q_2: float = (self.velocity.x + k_1 / 2)
+        q_3: float = (self.velocity.x + k_2 / 2)
+        q_4: float = (self.velocity.x + k_3)
 
-        k_3: float = T * self.fx(self.coordinates.x + q_2 / 2)
-        q_3: float = T * (self.velocity.x + k_2 / 2)
-
-        k_4: float = T * self.fx(self.coordinates.x + q_3)
-        q_4: float = T * (self.velocity.x + k_3)
-
-        self.velocity.x += (k_1 + 2 * k_2 + 2 * k_3 + k_4) / 6
-        self.coordinates.x += (q_1 + 2 * q_2 + 2 * q_3 + q_4) / 6
+        self.velocity.x += T * (k_1 + 2 * k_2 + 2 * k_3 + k_4) / 6
+        self.coordinates.x += T * (q_1 + 2 * q_2 + 2 * q_3 + q_4) / 6
 
     def calc_y(self):
-        k_1: float = T * self.fy(self.coordinates.y)
-        q_1: float = T * self.velocity.y
+        k_1: float = self.fy(self.coordinates.y)
+        k_2: float = self.fy(self.coordinates.y + q_1 / 2)
+        k_3: float = self.fy(self.coordinates.y + q_2 / 2)
+        k_4: float = self.fy(self.coordinates.y + q_3)
 
-        k_2: float = T * self.fy(self.coordinates.y + q_1 / 2)
-        q_2: float = T * (self.velocity.y + k_1 / 2)
+        q_1: float = self.velocity.y
+        q_2: float = (self.velocity.y + k_1 / 2)
+        q_3: float = (self.velocity.y + k_2 / 2)
+        q_4: float = (self.velocity.y + k_3)
 
-        k_3: float = T * self.fy(self.coordinates.y + q_2 / 2)
-        q_3: float = T * (self.velocity.y + k_2 / 2)
-
-        k_4: float = T * self.fy(self.coordinates.y + q_3)
-        q_4: float = T * (self.velocity.y + k_3)
-
-        self.velocity.y += (k_1 + 2 * k_2 + 2 * k_3 + k_4) / 6
-        self.coordinates.y += (q_1 + 2 * q_2 + 2 * q_3 + q_4) / 6
+        self.velocity.y += T * (k_1 + 2 * k_2 + 2 * k_3 + k_4) / 6
+        self.coordinates.y += T * (q_1 + 2 * q_2 + 2 * q_3 + q_4) / 6
 
     def position(self, scale: float = 1, x_offset: int = 0, y_offset: int = 0):
         x = int(round(self.coordinates.x * scale)) + x_offset
@@ -143,4 +139,4 @@ class Particle:
             self.color = p.color
 
         self.mass = new_mass
-        self.radius = sqrt((self.radius**2) + (p.radius**2))
+        self.radius = sqrt((self.radius ** 2) + (p.radius ** 2))
